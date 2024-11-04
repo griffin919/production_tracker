@@ -33,11 +33,7 @@
               <div class="text-sm text-gray-500">Total Expected Qty: {{ formatNumber(totalActualQty) }}</div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
-            <div>
-              <div class="text-sm text-gray-500">Total Expected Qty: {{ formatNumber(totalDifference) }}</div>
-            </div>
-          </div>
+       
           
           <!-- <div class="flex items-center gap-2">
             <Clipboard class="h-4 w-4 text-gray-400" />
