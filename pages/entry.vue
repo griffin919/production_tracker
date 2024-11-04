@@ -59,6 +59,15 @@
         </div>
         <p class="mt-1 text-lg sm:text-xl font-semibold">{{ entries.length }}</p>
       </div>
+
+      <div class="bg-white p-2 sm:p-3 rounded-md border border-gray-200 shadow-sm col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs text-gray-500">Total Expected Qty: </h3>
+          <Clipboard class="h-3.5 w-3.5 text-gray-400" />
+        </div>
+        <p class="mt-1 text-lg sm:text-xl font-semibold">{{ entries.length }}</p>
+      </div>
+
     </div>
 
     
@@ -137,6 +146,9 @@
                   </div>
                 </td>
                 <td class="px-3 py-2 text-xs whitespace-nowrap">
+                  {{ recordInputs(entry).join(", ") }}
+                  </td>
+                <td class="px-3 py-2 text-xs whitespace-nowrap">
                   {{ entry.expectedQuantity }} {{ entry.input_unit }}
                 </td>
                 <td class="px-3 py-2 text-xs whitespace-nowrap">
@@ -176,6 +188,9 @@
                 </div>
                 <p class="text-xs text-gray-500 mt-1">{{ formatDate(entry.date) }}</p>
               </div>
+
+              <span>  In Charge: {{ entry.inCharge }}</span>
+
               
               <!-- Action Button -->
               <button
@@ -189,35 +204,42 @@
             <!-- Production Details -->
             <div class="mt-3 grid grid-cols-2 gap-3">
               <div class="bg-gray-50 p-2 rounded">
+                <p class="text-xs text-gray-500">Inputs</p>
+                <p class="text-sm font-medium mt-0.5">
+                  {{ recordInputs(entry).join(", ") }} 
+                </p>
+              </div>
+              <div class="bg-gray-50 p-2 rounded">
                 <p class="text-xs text-gray-500">Expected</p>
                 <p class="text-sm font-medium mt-0.5">
-                  {{ entry.expectedQuantity }} {{ entry.input_unit }}
+                  {{ entry.expectedQuantity }} 
                 </p>
               </div>
               <div class="bg-gray-50 p-2 rounded">
                 <p class="text-xs text-gray-500">Actual</p>
                 <p class="text-sm font-medium mt-0.5">
-                  {{ entry.actualQuantity }} {{ entry.input_unit }}
+                  {{ entry.actualQuantity }} 
                 </p>
               </div>
-            </div>
-
-            <!-- Additional Info -->
-            <div class="mt-3 flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <span>  In Charge: {{ entry.inCharge }}</span>
-              </div>
               <div 
-                class="px-2 py-1 rounded-full text-xs"
-                :class="{
+              class="p-2"
+              :class="{
                   'bg-green-100 text-green-700': entry.actualQuantity === entry.expectedQuantity,
                   'bg-red-100 text-red-700': entry.actualQuantity < entry.expectedQuantity,
                   'bg-blue-100 text-blue-700': entry.actualQuantity > entry.expectedQuantity
                 }"
               >
-               Difference: {{ entry.actualQuantity - entry.expectedQuantity }} {{ entry.input_unit }}
+                <p class="text-xs text-gray-500">Difference</p>
+                <p 
+                
+                
+                >
+                  {{ entry.actualQuantity - entry.expectedQuantity }} 
+                </p>
               </div>
             </div>
+
+          
           </div>
         </div>
       </div>
@@ -299,6 +321,10 @@ const { fetchEquipments } = useManageEquipComp();
 const { fetchInputs } = useManageInput();
 const toast = useToast();
 
+const formatNumber = (number) => {
+  return new Intl.NumberFormat().format(number);
+};
+
 // Computed
 const totalEquipment = computed(() => equipmentList.value.length);
 
@@ -364,6 +390,7 @@ const filteredEntries = computed(() => {
 const tableHeaders = [
   { key: "date", label: "Date", sortable: true },
   { key: "equipment", label: "Equipment", sortable: true },
+  { key: "inputs", label: "Inputs", sortable: false },
   { key: "expected", label: "Expected", sortable: true },
   { key: "actual", label: "Actual", sortable: true },
   { key: "difference", label: "Difference", sortable: true },
@@ -376,6 +403,14 @@ const tableHeaders = [
 const handleAddEntry = () => {
   selectedEntry.value = null;
   showModal.value = true;
+};
+
+const recordInputs = (entry) => {
+  // list of inputs for the entry
+  return entry.inputTypes.map((inputId) => {
+    const input = inputTypes.value.find((input) => input.id === inputId);
+    return input ? input.name : "";
+  });
 };
 
 const formatDate = (dateString) => {
@@ -535,7 +570,7 @@ onUnmounted(() => {
 });
 
 definePageMeta({
-  title: "production metrics",
+  title: "production tracker",
   description: "View and manage equipment running today",
   layout: "mainlayout",
 });

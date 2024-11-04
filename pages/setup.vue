@@ -298,8 +298,8 @@ const resetForms = () => {
 };
 
 definePageMeta({
-  title: "Performance Metrics",
-  description: "Performance metrics.",
+  title: "Performance tracker",
+  description: "Performance tracker.",
   layout: "mainlayout",
 });
 

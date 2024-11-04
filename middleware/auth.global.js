@@ -22,7 +22,7 @@ export default defineNuxtRouteMiddleware((to) => {
           }
           // User PIN: redirect to entry page
           if (pin === '1090') {
-            resolve(navigateTo('/records', { replace: true }))
+            resolve(navigateTo('/entry', { replace: true }))
             return
           }
         }
@@ -39,7 +39,7 @@ export default defineNuxtRouteMiddleware((to) => {
       // Handle route access based on PIN
       if (pin === '8090') {
         // Admin PIN: only allow access to dashboard
-        if (to.path !== '/entry') {
+        if (to.path !== '/entry' ) {
           resolve(navigateTo('/entry', { replace: true }))
           return
         }

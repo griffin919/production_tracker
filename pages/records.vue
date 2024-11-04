@@ -16,19 +16,35 @@
             </div>
           </div>
           
-          <div class="flex items-center gap-2">
+          <!-- <div class="flex items-center gap-2">
             <TrendingUp class="h-4 w-4 text-gray-400" />
             <div>
               <div class="text-sm text-gray-500">Avg. Production: {{ calculateAverageProduction() }}%</div>
             </div>
+          </div> -->
+
+          <div class="flex items-center gap-2">
+            <div>
+              <div class="text-sm text-gray-500">Total Expected Qty: {{ formatNumber(totalExpectedQty) }}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div>
+              <div class="text-sm text-gray-500">Total Expected Qty: {{ formatNumber(totalActualQty) }}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div>
+              <div class="text-sm text-gray-500">Total Expected Qty: {{ formatNumber(totalDifference) }}</div>
+            </div>
           </div>
           
-          <div class="flex items-center gap-2">
+          <!-- <div class="flex items-center gap-2">
             <Clipboard class="h-4 w-4 text-gray-400" />
             <div>
               <div class="text-sm text-gray-500">Active: {{ Object.keys(groupedEntries).length }}</div>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 
@@ -179,18 +195,21 @@
                 <thead class="bg-gray-50">
                   <tr>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Date</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Input</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Expected</th>
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Actual</th>
                     <th class="hidden sm:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500">Difference</th>
                     <!-- <th class="hidden md:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500">Efficiency</th> -->
                     <th class="hidden lg:table-cell px-4 py-2 text-left text-xs font-medium text-gray-500">In Charge</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                    <!-- <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th> -->
                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y">
                   <tr v-for="entry in group" :key="entry.id" class="hover:bg-gray-50">
                     <td class="px-4 py-2 text-sm">{{ formatDate(entry.date) }}</td>
+                    <td class="px-4 py-2 text-sm">                  {{ recordInputs(entry).join(", ") }}
+                    </td>
                     <td class="px-4 py-2 text-sm">
                       {{ entry.expectedQuantity }}
                       <span class="text-gray-500 text-xs">{{ entry.input_unit }}</span>
@@ -234,11 +253,11 @@
                         <span class="text-sm">{{ entry.inCharge }}</span>
                       </div>
                     </td>
-                    <td class="px-4 py-2">
+                    <!-- <td class="px-4 py-2">
                       <span class="px-2 py-1 text-xs rounded-full" :class="getStatusClass(entry)">
                         {{ getStatusText(entry) }}
                       </span>
-                    </td>
+                    </td> -->
                     <td class="px-4 py-2">
                       <div class="flex items-center gap-1">
                         <button
@@ -373,6 +392,15 @@ const groupedEntries = computed(() => {
 const handleModalClose = () => {
   showModal.value = false;
   selectedEntry.value = null;
+};
+
+
+const recordInputs = (entry) => {
+  // list of inputs for the entry
+  return entry.inputTypes.map((inputId) => {
+    const input = inputTypes.value.find((input) => input.id === inputId);
+    return input ? input.name : "";
+  });
 };
 
 // Equipment Analytics Methods
@@ -569,10 +597,11 @@ const downloadCSV = () => {
     const headers = [
       'Date',
       'Equipment',
+      'Input',
       'Expected Quantity',
       'Actual Quantity',
       // 'Efficiency',
-      'Status',
+      'Difference',
       'In Charge',
       'Unit'
     ];
@@ -583,10 +612,11 @@ const downloadCSV = () => {
       const row = [
         formatDate(entry.date),
         entry.equipment_name,
+        recordInputs(entry).join(', '),
         entry.expectedQuantity,
         entry.actualQuantity,
         // `${efficiency}%`,
-        getStatusText(entry),
+        entry.actualQuantity - entry.expectedQuantity,
         entry.inCharge,
         entry.input_unit
       ];
@@ -628,7 +658,31 @@ const downloadCSV = () => {
   }
 };
 
+const totalActualQty = computed(() => {
+  return Object.values(groupedEntries.value).reduce((sum, group) => {
+    return sum + group.reduce((total, entry) => total + entry.actualQuantity, 0);
+  }, 0);
+});
+
+const totalExpectedQty = computed(() => {
+  return Object.values(groupedEntries.value).reduce((sum, group) => {
+    return sum + group.reduce((total, entry) => total + entry.expectedQuantity, 0);
+  }, 0);
+});
+
+const totalDifference = computed(() => {
+return Object.values(groupedEntries.value).reduce((sum, group) => {
+    return sum + group.reduce((total, entry) => total + (entry.actualQuantity - entry.expectedQuantity), 0);
+  }, 0);
+});
+
+const formatNumber = (number) => {
+  if (typeof number !== 'number') return number;
+  return new Intl.NumberFormat().format(number);
+};
+
 const downloadPDF = async () => {
+  console.log('Download PDF', groupedEntries.value);
   try {
     showDownloadMenu.value = false; // Close menu after selection
 
@@ -658,46 +712,31 @@ const downloadPDF = async () => {
     // Add report metadata
     doc.setFontSize(10);
     doc.text([
-      `Generated: ${formatDate(new Date())}`,
+      `Generated: ${formatDate(new Date())}`   ,
       `Period: ${formatDate(filters.startDate)} to ${formatDate(filters.endDate)}`,
       `Total Equipment: ${Object.keys(groupedEntries.value).length}`,
-      `Total Records: ${entries.length}`
+      `Total Records: ${entries.length}`,
+      `Total Expected Quantity: ${formatNumber(totalExpectedQty.value)}`,
+      `Total Actual Quantity: ${formatNumber(totalActualQty.value)}`,
+      `Total Difference: ${formatNumber(totalDifference.value)}`
     ], 14, 20);
-
-    // Create summary data
-    const summaryData = Object.entries(groupedEntries.value).map(([_, group]) => [
-      group[0].equipment_name,
-      group.length.toString(),
-      calculateIssueCount(group).toString(),
-      formatDate(getLastUpdate(group))
-    ]);
-
-    // Add summary table
-    doc.autoTable({
-      head: [['Equipment', 'Records', 'Issues', 'Last Update']],
-      body: summaryData,
-      startY: 35,
-      theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185] },
-      styles: { fontSize: 8 },
-      margin: { top: 35 }
-    });
 
     // Add detailed records
     const detailData = entries.map(entry => [
       formatDate(entry.date),
       entry.equipment_name,
-      `${entry.expectedQuantity}` ,
+      recordInputs(entry).join(', '),
+      `${entry.expectedQuantity}`,
       `${entry.actualQuantity}`,
-      getStatusText(entry),
+      `${entry.actualQuantity - entry.expectedQuantity}`,
       entry.inCharge
     ]);
 
     // Add detailed records table
     doc.autoTable({
-      head: [['Date', 'Equipment', 'Expected', 'Actual', 'Status', 'In Charge']],
+      head: [['Date', 'Equipment', 'inputs', 'Expected', 'Actual', 'Difference', 'In Charge']],
       body: detailData,
-      startY: doc.previousAutoTable.finalY + 10,
+      startY: 50, // Moved up since summary table was removed
       theme: 'grid',
       headStyles: { fillColor: [41, 128, 185] },
       styles: { fontSize: 8 },
@@ -736,7 +775,6 @@ const downloadPDF = async () => {
     });
   }
 };
-
 
 // Page metadata
 definePageMeta({

@@ -4,7 +4,7 @@
   >
     <div class="flex items-center">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-no-axes-column"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
-      <span class="text-2xl font-bold text-gray-800">Metrics</span>
+      <span class="text-2xl font-bold text-gray-800">PTracker</span>
     </div>
     
     <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
@@ -77,7 +77,7 @@
     </div>
 
     <div class="mt-6 text-center">
-      <p class="text-sm text-gray-600">Metrics © 2024</p>
+      <p class="text-sm text-gray-600">PTracker © 2024</p>
     </div>
   </div>
 </template>
@@ -150,7 +150,7 @@ const handleSubmit = async () => {
       if (pinCode === "8090") {
         router.push("/entry"); // Admin goes to dashboard
       } else {
-        router.push("/records"); // User goes to records
+        router.push("/entry"); // User goes to records
       }
     } else {
       error.value = "Invalid PIN";
