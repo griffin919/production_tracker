@@ -11,7 +11,7 @@
       </div>
       <div class="flex items-center">
         <Icon name="lucide:clipboard-pen" class="h-6 w-6 text-gray-800" @click.stop="navigateToEntry" />
-        <Icon name="lucide:settings" class="h-6 w-6 text-gray-800 px-6" @click.stop="handleConfigure" />
+        <Icon v-if="isAdmin" name="lucide:settings" class="h-6 w-6 text-gray-800 px-6" @click.stop="handleConfigure" />
         <Icon v-if="isAdmin" name="lucide:shield" class="h-6 w-6 text-gray-800" @click.stop="navigateToAdmin" />
         <Icon name="lucide:log-out" class="h-6 w-6 text-gray-800 ml-6" @click.stop="handleLogout" />
       </div>

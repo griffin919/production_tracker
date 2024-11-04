@@ -59,11 +59,7 @@
         </div>
         <p class="mt-1 text-lg sm:text-xl font-semibold">{{ entries.length }}</p>
       </div>
-
-     
-
     </div>
-
     
     <!-- Table/Cards Section -->
     <div class="bg-white rounded-md shadow-sm border border-gray-200">

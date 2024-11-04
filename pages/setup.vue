@@ -241,13 +241,14 @@ const handleDeleteInput = async (id) => {
 };
 
 // Inputs Methods
-const addOrUpdateInput = () => {
+const addOrUpdateInput =async () => {
   if (isEditing.value) {
-    const result = updateInput("testuser1234", {
+    const result = await updateInput("testuser1234", {
       input_id: currentEditItem.value.id,
       name: inputForm.value.name,
       unit: inputForm.value.unit,
     });
+    console.log("🚀 ~ addOrUpdateInput ~ result:", result)
 
     if (result.success) {
       handleToast("Success", "Input updated successfully", "green");
@@ -255,7 +256,7 @@ const addOrUpdateInput = () => {
       handleToast("Error", "Failed to update input", "red");
     }
   } else {
-    const result = addNewInput(
+    const result = await addNewInput(
       {
         input_id: uuidv4(),
         name: inputForm.value.name,
@@ -263,6 +264,12 @@ const addOrUpdateInput = () => {
       },
       "testuser1234"
     );
+
+    if (result.success) {
+      handleToast("Success", "Input added successfully", "green");
+    } else {
+      handleToast("Error", "Failed to add input", "red");
+    }
   }
 
   handleFetchInputs("testuser1234");

@@ -30,12 +30,17 @@
           </div>
           <div class="flex items-center gap-2">
             <div>
-              <div class="text-sm text-gray-500">Total Expected Qty: {{ formatNumber(totalActualQty) }}</div>
+              <div class="text-sm text-gray-500">Total Actual Qty: {{ formatNumber(totalActualQty) }}</div>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <div>
-              <div class="text-sm text-gray-500">Total Expected Qty: {{ formatNumber(totalDifference) }}</div>
+              <div class="text-sm text-gray-500">Difference: {{ formatNumber(totalDifference) }}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div>
+              <div class="text-sm text-gray-500">Total Efficiency: {{ totalEfficiencyCalc }}%</div>
             </div>
           </div>
           
@@ -149,7 +154,6 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                 <div class="flex items-center gap-2">
-                  <Settings2 class="h-5 w-5 text-gray-600" />
                   <h3 class="text-lg font-semibold">
                     {{ group[0]?.equipment_name || "Unknown Equipment" }}
                   </h3>
@@ -658,6 +662,11 @@ const downloadCSV = () => {
   }
 };
 
+const formatNumber = (number) => {
+  if (typeof number !== 'number') return number;
+  return new Intl.NumberFormat().format(number);
+};
+
 const totalActualQty = computed(() => {
   return Object.values(groupedEntries.value).reduce((sum, group) => {
     return sum + group.reduce((total, entry) => total + entry.actualQuantity, 0);
@@ -676,13 +685,18 @@ return Object.values(groupedEntries.value).reduce((sum, group) => {
   }, 0);
 });
 
-const formatNumber = (number) => {
-  if (typeof number !== 'number') return number;
-  return new Intl.NumberFormat().format(number);
-};
+const totalEfficiencyCalc = computed(() => {
+  const totalEntries = Object.values(groupedEntries.value).flat();
+  if (totalEntries.length === 0) return 0;
+  const totalEfficiency = totalEntries.reduce((sum, entry) => {
+    return sum + (entry.actualQuantity / entry.expectedQuantity) * 100;
+  }, 0);
+  return (totalEfficiency / totalEntries.length).toFixed(1);
+});
+
+
 
 const downloadPDF = async () => {
-  console.log('Download PDF', groupedEntries.value);
   try {
     showDownloadMenu.value = false; // Close menu after selection
 
@@ -718,7 +732,8 @@ const downloadPDF = async () => {
       `Total Records: ${entries.length}`,
       `Total Expected Quantity: ${formatNumber(totalExpectedQty.value)}`,
       `Total Actual Quantity: ${formatNumber(totalActualQty.value)}`,
-      `Total Difference: ${formatNumber(totalDifference.value)}`
+      `Total Difference: ${formatNumber(totalDifference.value)}`,
+      `Total Efficiency: ${totalEfficiencyCalc.value}%`
     ], 14, 20);
 
     // Add detailed records
@@ -736,7 +751,7 @@ const downloadPDF = async () => {
     doc.autoTable({
       head: [['Date', 'Equipment', 'inputs', 'Expected', 'Actual', 'Difference', 'In Charge']],
       body: detailData,
-      startY: 50, // Moved up since summary table was removed
+      startY: 55, // Moved up since summary table was removed
       theme: 'grid',
       headStyles: { fillColor: [41, 128, 185] },
       styles: { fontSize: 8 },
