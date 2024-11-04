@@ -60,13 +60,7 @@
         <p class="mt-1 text-lg sm:text-xl font-semibold">{{ entries.length }}</p>
       </div>
 
-      <div class="bg-white p-2 sm:p-3 rounded-md border border-gray-200 shadow-sm col-span-2 lg:col-span-1">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs text-gray-500">Total Expected Qty: </h3>
-          <Clipboard class="h-3.5 w-3.5 text-gray-400" />
-        </div>
-        <p class="mt-1 text-lg sm:text-xl font-semibold">{{ entries.length }}</p>
-      </div>
+     
 
     </div>
 
