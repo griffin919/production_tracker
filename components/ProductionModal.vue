@@ -177,9 +177,9 @@
           <FileText class="h-4 w-4" />
           Notes
         </label>
+        <!-- :disabled="isEditMode" -->
         <textarea
           v-model="formData.notes"
-          :disabled="isEditMode"
           rows="3"
           class="w-full px-3 py-2 border border-gray-300 rounded-md"
           placeholder="Enter any additional notes"
