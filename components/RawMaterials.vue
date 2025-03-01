@@ -1,7 +1,7 @@
 <template>
     <div class="container px-4 py-6">
       <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4 lg:mb-0">Raw Materials Management</h2>
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 lg:mb-0">Materials Inventory</h2>
         
         <!-- Date Range and Actions -->
         <div class="flex flex-col sm:flex-row gap-3">
@@ -272,7 +272,7 @@
   <script setup>
   import { ref, reactive, computed, onMounted } from 'vue';
   import { v4 as uuidv4 } from 'uuid';
-  import { useRawMaterials } from '~/composables/useRawMaterials';
+  import { useUnifiedMaterials } from '~/composables/useUnifiedMaterials';
   import { 
     PlusCircle, 
     Search, 
@@ -288,11 +288,11 @@
     isLoading, 
     error: apiError, 
     fetchMaterials, 
-    fetchMaterialEntries, 
-    addMaterialEntry, 
-    updateMaterialEntry, 
+    fetchInventoryTransactions: fetchMaterialEntries, 
+    addInventoryTransaction: addMaterialEntry, 
+    updateInventoryTransaction: updateMaterialEntry, 
     deleteMaterialEntry 
-  } = useRawMaterials();
+  } = useUnifiedMaterials();
   
   const toast = useToast();
   
@@ -336,19 +336,32 @@
       closingBalance: 0
     };
   
-    if (materialEntries.value.length) {
-      const firstEntry = materialEntries.value[0];
-      const lastEntry = materialEntries.value[materialEntries.value.length - 1];
+    // Get all unique materials in the entries
+    const uniqueMaterialIds = [...new Set(materialEntries.value.map(entry => entry.material_id))];
+    
+    // Calculate stats for each material
+    uniqueMaterialIds.forEach(materialId => {
+      // Get all entries for this material, sorted by date
+      const materialEntryList = materialEntries.value
+        .filter(entry => entry.material_id === materialId)
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       
-      stats.openingBalance = firstEntry.opening_balance || 0;
-      stats.closingBalance = lastEntry.running_balance || 0;
-      
-      stats.totalReceived = materialEntries.value.reduce((sum, entry) => 
-        sum + (entry.quantity_received || 0), 0);
-      
-      stats.totalUsed = materialEntries.value.reduce((sum, entry) => 
-        sum + (entry.quantity_used || 0) + (entry.quantity_damaged || 0), 0);
-    }
+      if (materialEntryList.length) {
+        // Get the first and last entry for this material
+        const firstEntry = materialEntryList[0];
+        const lastEntry = materialEntryList[materialEntryList.length - 1];
+        
+        // Add to total opening balance and closing balance
+        stats.openingBalance += firstEntry.opening_balance || 0;
+        stats.closingBalance += lastEntry.running_balance || 0;
+        
+        // Calculate received and used
+        materialEntryList.forEach(entry => {
+          stats.totalReceived += (entry.quantity_received || 0);
+          stats.totalUsed += (entry.quantity_used || 0) + (entry.quantity_damaged || 0);
+        });
+      }
+    });
   
     return stats;
   });
@@ -356,7 +369,7 @@
   // Methods
   function getDefaultEntryForm() {
     return {
-      entry_id: uuidv4(),
+      transaction_id: uuidv4(),
       timestamp: new Date().toISOString().slice(0, 16),
       material_id: '',
       material_name: '',
@@ -433,7 +446,7 @@
   function editEntry(entry) {
     selectedEntry.value = entry;
     Object.assign(entryForm, {
-      entry_id: entry.id,
+      transaction_id: entry.id,
       timestamp: entry.timestamp.slice(0, 16),
       material_id: entry.material_id,
       material_name: entry.material_name,
@@ -470,8 +483,23 @@
   
       // Get material name for display
       const material = materials.value.find(m => m.id === entryForm.material_id);
-      if (material) {
-        entryForm.material_name = material.name;
+      if (!material) {
+        throw new Error('Selected material not found');
+      }
+      
+      entryForm.material_name = material.name;
+      
+      // Calculate the current stock level for this material
+      const materialStock = material.current_stock || 0;
+      
+      // Set the opening balance based on the material's current stock
+      entryForm.opening_balance = materialStock;
+      
+      // Calculate running balance based on transaction type
+      if (['stock_received', 'received_from_factory', 'return_from_production'].includes(entryForm.type)) {
+        entryForm.running_balance = materialStock + entryForm.quantity;
+      } else {
+        entryForm.running_balance = materialStock - entryForm.quantity;
       }
   
       if (selectedEntry.value) {
@@ -495,6 +523,7 @@
       }
   
       await loadMaterialEntries();
+      await loadMaterials(); // Refresh materials to get updated stock levels
       closeEntryModal();
     } catch (err) {
       error.value = err.message || 'An error occurred while saving';
@@ -538,7 +567,7 @@
           id: 1,
           timestamp: '2025-03-01T08:00:00',
           material_id: 'sugar-123',
-          material_name: 'Raw Sugar(Dummy Data)',
+          material_name: 'Raw Sugar (Dummy Data)',
           type: 'stock_received',
           quantity_received: 1000,
           quantity_used: 0,
@@ -552,7 +581,7 @@
           id: 2,
           timestamp: '2025-03-01T10:30:00',
           material_id: 'sugar-123',
-          material_name: 'Raw Sugar(Dummy Data)',
+          material_name: 'Raw Sugar (Dummy Data)',
           type: 'production_usage',
           quantity_received: 0,
           quantity_used: 300,
