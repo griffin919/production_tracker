@@ -264,7 +264,9 @@
   const toast = useToast();
   
   // State
-  const startDate = ref(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+//   const startDate = ref(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+//   date should be first january 2025
+const startDate = ref('2025-01-01');
   const endDate = ref(new Date().toISOString().split('T')[0]);
   const selectedMaterial = ref('all');
   const chartView = ref('usage');

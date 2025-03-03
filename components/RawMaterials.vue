@@ -743,7 +743,8 @@ function handleToast(title, description, color) {
 onMounted(async () => {
   // Set default date range to current day
   const today = new Date();
-  filters.startDate = today.toISOString().split("T")[0];
+  // filters.startDate = today.toISOString().split("T")[0];
+  filters.startDate = ref('2025-01-01');
   filters.endDate = today.toISOString().split("T")[0];
 
   await loadMaterials();
