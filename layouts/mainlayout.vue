@@ -10,7 +10,7 @@
           <li>
             <NuxtLink to="/entry" class="flex items-center px-4 py-2 text-white hover:bg-brand-color-700 rounded-md">
               <Home class="h-5 w-5 mr-3" />
-              <span>Dashboard</span>
+              <span>Production</span>
             </NuxtLink>
           </li>
           <li>
@@ -82,7 +82,7 @@
                 @click="mobileMenuOpen = false"
               >
                 <Home class="h-5 w-5 mr-3" />
-                <span>Dashboard</span>
+                <span>Production</span>
               </NuxtLink>
             </li>
             <li>

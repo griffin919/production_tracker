@@ -1,51 +1,46 @@
-import { ref } from 'vue'
-import { ref as dbRef, get, set, update, remove } from 'firebase/database'
+import { ref } from 'vue';
+import { ref as dbRef, get, set, update, remove } from 'firebase/database';
 
 export const useRawMaterials = () => {
-    const { $database } = useNuxtApp()
-    
+    const { $database } = useNuxtApp();
+
     // State
-    const isLoading = ref(false)
-    const error = ref(null)
-    
+    const isLoading = ref(false);
+    const error = ref(null);
+
     /**
-     * Fetch raw materials from inputs table
+     * Fetch raw materials using Promise pattern
      * @param {string} userId - User ID 
-     * @returns {Promise<Array>} Array of raw materials (inputs)
+     * @returns {Promise<Array>} Array of raw materials
      */
     const fetchMaterials = async (userId) => {
-        isLoading.value = true
-        error.value = null
-        
+        isLoading.value = true;
+        error.value = null;
+
         try {
-            // We use the existing inputs as raw materials
-            const inputsRef = dbRef($database, `${userId}/inputs`)
-            const snapshot = await get(inputsRef)
-            
+            const materialsRef = dbRef($database, `${userId}/materials`);
+            const snapshot = await get(materialsRef);
+
             if (snapshot.exists()) {
-                const materialsArray = []
+                const materialsArray = [];
                 snapshot.forEach((childSnapshot) => {
                     materialsArray.push({
                         id: childSnapshot.key,
-                        material_id: childSnapshot.val().input_id,
-                        name: childSnapshot.val().name,
-                        unit: childSnapshot.val().unit,
-                        min_stock: childSnapshot.val().min_stock || 100,
                         ...childSnapshot.val()
-                    })
-                })
-                return materialsArray
+                    });
+                });
+                return materialsArray;
             }
-            return []
+            return [];
         } catch (err) {
-            console.error('Error fetching materials from inputs:', err)
-            error.value = err
-            throw err
+            console.error('Error fetching materials:', err);
+            error.value = err;
+            throw err;
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-    
+    };
+
     /**
      * Add a new material
      * @param {Object} data - Material data
@@ -53,24 +48,24 @@ export const useRawMaterials = () => {
      * @returns {Promise<Object>} Operation result
      */
     const addMaterial = async (data, userId) => {
-        isLoading.value = true
-        error.value = null
-        
+        isLoading.value = true;
+        error.value = null;
+
         try {
             await set(dbRef($database, `${userId}/materials/${data.material_id}`), {
                 ...data,
                 timestamp: Date.now()
-            })
-            return { success: true }
+            });
+            return { success: true };
         } catch (err) {
-            console.error('Error adding material:', err)
-            error.value = err
-            return { success: false, message: err.message }
+            console.error('Error adding material:', err);
+            error.value = err;
+            return { success: false, message: err.message };
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-    
+    };
+
     /**
      * Delete a material
      * @param {string} userId - User ID
@@ -78,21 +73,21 @@ export const useRawMaterials = () => {
      * @returns {Promise<Object>} Operation result
      */
     const deleteMaterial = async (userId, materialId) => {
-        isLoading.value = true
-        error.value = null
-        
+        isLoading.value = true;
+        error.value = null;
+
         try {
-            await remove(dbRef($database, `${userId}/materials/${materialId}`))
-            return { success: true }
+            await remove(dbRef($database, `${userId}/materials/${materialId}`));
+            return { success: true };
         } catch (err) {
-            console.error('Error deleting material:', err)
-            error.value = err
-            return { success: false, message: err.message }
+            console.error('Error deleting material:', err);
+            error.value = err;
+            return { success: false, message: err.message };
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-    
+    };
+
     /**
      * Update a material
      * @param {string} userId - User ID
@@ -100,20 +95,20 @@ export const useRawMaterials = () => {
      * @returns {Promise<Object>} Operation result
      */
     const updateMaterial = async (userId, data) => {
-        isLoading.value = true
-        error.value = null
-        
+        isLoading.value = true;
+        error.value = null;
+
         try {
-            await update(dbRef($database, `${userId}/materials/${data.material_id}`), data)
-            return { success: true }
+            await update(dbRef($database, `${userId}/materials/${data.material_id}`), data);
+            return { success: true };
         } catch (err) {
-            console.error('Error updating material:', err)
-            error.value = err
-            return { success: false, message: err.message }
+            console.error('Error updating material:', err);
+            error.value = err;
+            return { success: false, message: err.message };
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
+    };
 
     /**
      * Fetch material entries
@@ -122,54 +117,54 @@ export const useRawMaterials = () => {
      * @returns {Promise<Array>} Array of material entries
      */
     const fetchMaterialEntries = async (userId, dateRange = {}) => {
-        isLoading.value = true
-        error.value = null
-        
+        isLoading.value = true;
+        error.value = null;
+
         try {
-            const entriesRef = dbRef($database, `${userId}/material_entries`)
-            const snapshot = await get(entriesRef)
-            
+            const entriesRef = dbRef($database, `${userId}/material_transactions`);
+            const snapshot = await get(entriesRef);
+
             if (snapshot.exists()) {
-                const entriesArray = []
-                
+                const entriesArray = [];
+
                 snapshot.forEach((childSnapshot) => {
-                    const entry = childSnapshot.val()
-                    
+                    const entry = childSnapshot.val();
+
                     // Apply date range filter if provided
                     if (dateRange.startDate && dateRange.endDate) {
-                        const entryDate = new Date(entry.timestamp)
-                        const startDate = new Date(dateRange.startDate)
-                        const endDate = new Date(dateRange.endDate)
-                        
+                        const entryDate = new Date(entry.timestamp);
+                        const startDate = new Date(dateRange.startDate);
+                        const endDate = new Date(dateRange.endDate);
+
                         // Set end date to end of day
-                        endDate.setHours(23, 59, 59, 999)
-                        
+                        endDate.setHours(23, 59, 59, 999);
+
                         if (entryDate < startDate || entryDate > endDate) {
-                            return
+                            return;
                         }
                     }
-                    
+
                     entriesArray.push({
                         id: childSnapshot.key,
                         ...entry
-                    })
-                })
-                
+                    });
+                });
+
                 // Sort by timestamp, newest first
-                entriesArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                
-                return entriesArray
+                entriesArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                return entriesArray;
             }
-            return []
+            return [];
         } catch (err) {
-            console.error('Error fetching material entries:', err)
-            error.value = err
-            throw err
+            console.error('Error fetching material entries:', err);
+            error.value = err;
+            throw err;
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-    
+    };
+
     /**
      * Add a new material entry
      * @param {Object} data - Entry data
@@ -177,12 +172,12 @@ export const useRawMaterials = () => {
      * @returns {Promise<Object>} Operation result
      */
     const addMaterialEntry = async (data, userId) => {
-        isLoading.value = true
-        error.value = null
-        
+        isLoading.value = true;
+        error.value = null;
+
         try {
-            const entryRef = dbRef($database, `${userId}/material_entries/${data.entry_id}`)
-            
+            const entryRef = dbRef($database, `${userId}/material_transactions/${data.entry_id}`);
+
             // Process quantities based on entry type
             const entryData = {
                 ...data,
@@ -190,32 +185,29 @@ export const useRawMaterials = () => {
                 quantity_used: 0,
                 quantity_damaged: 0,
                 timestamp: data.timestamp || new Date().toISOString()
-            }
-            
+            };
+
             // Determine which quantity field to use based on transaction type
             if (['stock_received', 'received_from_factory', 'return_from_production'].includes(data.type)) {
-                entryData.quantity_received = data.quantity
+                entryData.quantity_received = data.quantity;
             } else if (data.type === 'damages') {
-                entryData.quantity_damaged = data.quantity
+                entryData.quantity_damaged = data.quantity;
             } else {
-                entryData.quantity_used = data.quantity
+                entryData.quantity_used = data.quantity;
             }
-            
-            await set(entryRef, entryData)
-            
-            // Calculate balance should be done in a cloud function or server logic
-            // For simplicity, we just return success here
-            
-            return { success: true }
+
+            await set(entryRef, entryData);
+
+            return { success: true };
         } catch (err) {
-            console.error('Error adding material entry:', err)
-            error.value = err
-            return { success: false, message: err.message }
+            console.error('Error adding material entry:', err);
+            error.value = err;
+            return { success: false, message: err.message };
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-    
+    };
+
     /**
      * Update a material entry
      * @param {string} userId - User ID
@@ -223,9 +215,10 @@ export const useRawMaterials = () => {
      * @returns {Promise<Object>} Operation result
      */
     const updateMaterialEntry = async (userId, data) => {
-        isLoading.value = true
-        error.value = null
-        
+        console.log("🚀 ~ updateMaterialEntry ~ userId, data:", userId, data)
+        isLoading.value = true;
+        error.value = null;
+
         try {
             // Process quantities based on entry type
             const entryData = {
@@ -233,29 +226,29 @@ export const useRawMaterials = () => {
                 quantity_received: 0,
                 quantity_used: 0,
                 quantity_damaged: 0
-            }
-            
+            };
+
             // Determine which quantity field to use based on transaction type
             if (['stock_received', 'received_from_factory', 'return_from_production'].includes(data.type)) {
-                entryData.quantity_received = data.quantity
+                entryData.quantity_received = data.quantity;
             } else if (data.type === 'damages') {
-                entryData.quantity_damaged = data.quantity
+                entryData.quantity_damaged = data.quantity;
             } else {
-                entryData.quantity_used = data.quantity
+                entryData.quantity_used = data.quantity;
             }
-            
-            await update(dbRef($database, `${userId}/material_entries/${data.entry_id}`), entryData)
-            
-            return { success: true }
+
+            await update(dbRef($database, `${userId}/material_transactions/${data.entry_id}`), entryData);
+
+            return { success: true };
         } catch (err) {
-            console.error('Error updating material entry:', err)
-            error.value = err
-            return { success: false, message: err.message }
+            console.error('Error updating material entry:', err);
+            error.value = err;
+            return { success: false, message: err.message };
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-    
+    };
+
     /**
      * Delete a material entry
      * @param {string} userId - User ID
@@ -263,21 +256,21 @@ export const useRawMaterials = () => {
      * @returns {Promise<Object>} Operation result
      */
     const deleteMaterialEntry = async (userId, entryId) => {
-        isLoading.value = true
-        error.value = null
-        
+        isLoading.value = true;
+        error.value = null;
+
         try {
-            await remove(dbRef($database, `${userId}/material_entries/${entryId}`))
-            return { success: true }
+            await remove(dbRef($database, `${userId}/material_transactions/${entryId}`));
+            return { success: true };
         } catch (err) {
-            console.error('Error deleting material entry:', err)
-            error.value = err
-            return { success: false, message: err.message }
+            console.error('Error deleting material entry:', err);
+            error.value = err;
+            return { success: false, message: err.message };
         } finally {
-            isLoading.value = false
+            isLoading.value = false;
         }
-    }
-    
+    };
+
     /**
      * Calculate material stats
      * @param {Array} entries - Material entries
@@ -285,21 +278,24 @@ export const useRawMaterials = () => {
      * @returns {Object} Material statistics
      */
     const calculateMaterialStats = (entries, materials) => {
-        if (!entries.length || !materials.length) return {}
-        
+        if (!entries.length || !materials.length) return {};
+
         // Group entries by material
         const entriesByMaterial = entries.reduce((acc, entry) => {
             if (!acc[entry.material_id]) {
-                acc[entry.material_id] = []
+                acc[entry.material_id] = [];
             }
-            acc[entry.material_id].push(entry)
-            return acc
-        }, {})
-        
+            acc[entry.material_id].push(entry);
+            return acc;
+        }, {});
+
         // Calculate stats for each material
         const materialStats = materials.map(material => {
-            const materialEntries = entriesByMaterial[material.id] || []
-            
+            const materialEntries = entriesByMaterial[material.id] || [];
+
+            // Sort entries by date (oldest first)
+            materialEntries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
             // Default values
             let stats = {
                 material_id: material.id,
@@ -313,84 +309,81 @@ export const useRawMaterials = () => {
                 factory_transfer: 0,
                 closing_stock: 0,
                 avg_daily_usage: 0
-            }
-            
-            // Sort entries by date (oldest first)
-            materialEntries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-            
+            };
+
             // If we have entries, set opening stock from the first entry
             if (materialEntries.length) {
-                stats.opening_stock = materialEntries[0].opening_balance || 0
+                stats.opening_stock = materialEntries[0].opening_balance || 0;
             }
-            
+
             // Process all entries to calculate totals
             materialEntries.forEach(entry => {
                 if (['stock_received', 'received_from_factory'].includes(entry.type)) {
-                    stats.total_received += (entry.quantity_received || 0)
+                    stats.total_received += (entry.quantity_received || 0);
                 } else if (entry.type === 'return_from_production') {
-                    stats.returns += (entry.quantity_received || 0)
+                    stats.returns += (entry.quantity_received || 0);
                 } else if (entry.type === 'production_usage') {
-                    stats.production_usage += (entry.quantity_used || 0)
+                    stats.production_usage += (entry.quantity_used || 0);
                 } else if (entry.type === 'damages') {
-                    stats.damages += (entry.quantity_damaged || 0)
+                    stats.damages += (entry.quantity_damaged || 0);
                 } else if (entry.type === 'sent_to_factory') {
-                    stats.factory_transfer += (entry.quantity_used || 0)
+                    stats.factory_transfer += (entry.quantity_used || 0);
                 }
-            })
-            
+            });
+
             // Calculate net movement and closing stock
-            stats.net_movement = stats.total_received + stats.returns - 
-                                stats.production_usage - stats.damages - stats.factory_transfer
-            
-            stats.closing_stock = stats.opening_stock + stats.net_movement
-            
+            stats.net_movement = stats.total_received + stats.returns -
+                                stats.production_usage - stats.damages - stats.factory_transfer;
+
+            stats.closing_stock = stats.opening_stock + stats.net_movement;
+
             // Calculate average daily usage
             if (materialEntries.length > 0) {
-                const firstDate = new Date(materialEntries[0].timestamp)
-                const lastDate = new Date(materialEntries[materialEntries.length - 1].timestamp)
-                const daysDiff = Math.max(1, Math.round((lastDate - firstDate) / (1000 * 60 * 60 * 24)))
-                stats.avg_daily_usage = stats.production_usage / daysDiff
+                const firstDate = new Date(materialEntries[0].timestamp);
+                const lastDate = new Date(materialEntries[materialEntries.length - 1].timestamp);
+                const daysDiff = Math.max(1, Math.round((lastDate - firstDate) / (1000 * 60 * 60 * 24)));
+                stats.avg_daily_usage = stats.production_usage / daysDiff;
             }
-            
-            return stats
-        })
-        
-        return materialStats
-    }
-    
+
+            return stats;
+        });
+
+        return materialStats;
+    };
+
     /**
      * Group entries by date
      * @param {Array} entries - Material entries
      * @returns {Object} Entries grouped by date
      */
     const groupEntriesByDate = (entries) => {
-        if (!entries.length) return []
-        
+        if (!entries.length) return [];
+
         // Convert entries to daily structure
         const entriesByDate = entries.reduce((acc, entry) => {
-            const date = entry.timestamp.split('T')[0]
-            
+            const date = new Date(entry.timestamp).toISOString().split('T')[0];
+
             if (!acc[date]) {
                 acc[date] = {
                     date,
                     total_movements: 0,
                     movements: []
-                }
+                };
             }
-            
-            acc[date].movements.push(entry)
-            acc[date].total_movements++
-            
-            return acc
-        }, {})
-        
+
+            acc[date].movements.push(entry);
+            acc[date].total_movements++;
+
+            return acc;
+        }, {});
+
         // Convert to array and sort by date (newest first)
-        const dailyStats = Object.values(entriesByDate)
-        dailyStats.sort((a, b) => new Date(b.date) - new Date(a.date))
-        
-        return dailyStats
-    }
-    
+        const dailyStats = Object.values(entriesByDate);
+        dailyStats.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        return dailyStats;
+    };
+
     return {
         isLoading,
         error,
@@ -404,5 +397,5 @@ export const useRawMaterials = () => {
         deleteMaterialEntry,
         calculateMaterialStats,
         groupEntriesByDate
-    }
-}
+    };
+};
